@@ -1,7 +1,7 @@
 # zenitel-client
 
-[![npm](https://img.shields.io/npm/v/zenitel-client?color=818cf8&label=npm&style=flat-square)](https://www.npmjs.com/package/zenitel-client)
-[![license](https://img.shields.io/npm/l/zenitel-client?color=818cf8&style=flat-square)](https://github.com/pinecall/zenitel-client/blob/master/LICENSE)
+[![npm](https://img.shields.io/npm/v/zenitel?color=818cf8&label=npm&style=flat-square)](https://www.npmjs.com/package/zenitel)
+[![license](https://img.shields.io/npm/l/zenitel?color=818cf8&style=flat-square)](https://github.com/pinecall/zenitel-client/blob/master/LICENSE)
 
 > TypeScript client for Zenitel intercom systems — HTTP scraper, network scanner, and CLI.
 
@@ -45,13 +45,13 @@ Zero runtime dependencies · Native `fetch` (Node 18+) · Tested on **TCIV-2+** 
 ## Install
 
 ```bash
-npm install zenitel-client
+npm install zenitel
 ```
 
 ## Quick Start
 
 ```typescript
-import { ZenitelClient } from 'zenitel-client';
+import { ZenitelClient } from 'zenitel';
 
 const z = new ZenitelClient({ host: '192.168.1.143' });
 
@@ -246,7 +246,7 @@ zenitel reboot -h 192.168.1.143
 ### `ZenitelClient`
 
 ```typescript
-import { ZenitelClient } from 'zenitel-client';
+import { ZenitelClient } from 'zenitel';
 
 const z = new ZenitelClient({
   host: '192.168.1.143',
@@ -397,7 +397,7 @@ await z.reboot(); // ~30 seconds offline
 ### `scanNetwork()`
 
 ```typescript
-import { scanNetwork } from 'zenitel-client';
+import { scanNetwork } from 'zenitel';
 
 const devices = await scanNetwork({ timeout: 5000 });
 // [{ ip, mac, model, firmware, hasCamera, hostname, mode }]
