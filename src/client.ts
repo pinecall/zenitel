@@ -16,6 +16,7 @@ import type {
   CallStatus,
   SIPConfig,
   ProvisionConfig,
+  AudioSettings,
 } from './types.js';
 
 export class ZenitelClient {
@@ -435,6 +436,209 @@ export class ZenitelClient {
 
     // 4. Reboot to apply
     await this.reboot();
+  }
+
+  // ── Audio Settings ─────────────────────────────────────────────────────
+  // Full audio config via /goform/zForm_auto_config (AngularJS JSON endpoint).
+  // The POST expects the complete JSON — partial updates are not supported.
+  // Read → merge → write pattern required.
+
+  /** Get current audio settings (parsed from goform JSON) */
+  async getAudioSettings(): Promise<AudioSettings> {
+    const raw = await this.getAudioSettingsRaw();
+    return this._parseAudioJson(raw);
+  }
+
+  /**
+   * Update audio settings. Reads current config, deep-merges with the
+   * provided partial, and writes the complete JSON back.
+   *
+   * @example
+   * // Set speaker to +3 dB
+   * await z.setAudioSettings({ speaker: { gain: 3 } })
+   *
+   * // Enable DRC with 8 dBA gain
+   * await z.setAudioSettings({ drc: { enabled: true, gain: 8 } })
+   */
+  async setAudioSettings(partial: Partial<{
+    speaker: Partial<AudioSettings['speaker']>;
+    lineOut: Partial<AudioSettings['lineOut']>;
+    mic: Partial<AudioSettings['mic']>;
+    aec: Partial<AudioSettings['aec']>;
+    anc: Partial<AudioSettings['anc']>;
+    fess: Partial<AudioSettings['fess']>;
+    drc: Partial<AudioSettings['drc']>;
+    avc: Partial<AudioSettings['avc']>;
+    mode: string;
+  }>): Promise<void> {
+    // 1. Read current raw JSON
+    const raw = await this.getAudioSettingsRaw();
+
+    // 2. Apply changes
+    const audio = raw.audio;
+    const outputs = audio.io.output_devices.output_device;
+    const speaker = outputs.find((d: any) => d.kid === 'internal_speaker');
+    const lineOut = outputs.find((d: any) => d.kid === 'line_out');
+    const mic = audio.io.input_devices.input_device[0];
+    const dsp = audio.lines.line[0].dsp;
+
+    if (partial.speaker && speaker) {
+      if (partial.speaker.gain !== undefined) speaker.gain = partial.speaker.gain;
+      if (partial.speaker.overrideGain !== undefined) speaker.override_gain = partial.speaker.overrideGain;
+    }
+    if (partial.lineOut && lineOut) {
+      if (partial.lineOut.gain !== undefined) lineOut.gain = partial.lineOut.gain;
+      if (partial.lineOut.overrideGain !== undefined) lineOut.override_gain = partial.lineOut.overrideGain;
+    }
+    if (partial.mic && mic) {
+      if (partial.mic.gain !== undefined) mic.gain = partial.mic.gain;
+    }
+    if (partial.aec) {
+      if (partial.aec.enabled !== undefined) dsp.aec.enable = partial.aec.enabled;
+      if (partial.aec.mode !== undefined) dsp.aec.aec_mode = partial.aec.mode;
+    }
+    if (partial.anc) {
+      if (partial.anc.enabled !== undefined) dsp.anc.enable = partial.anc.enabled;
+      if (partial.anc.mode !== undefined) dsp.anc.anc_mode = partial.anc.mode;
+    }
+    if (partial.fess) {
+      if (partial.fess.enabled !== undefined) dsp.fess.enable = partial.fess.enabled;
+      if (partial.fess.threshold !== undefined) dsp.fess.gain = partial.fess.threshold;
+      if (partial.fess.delay !== undefined) dsp.fess.delay = partial.fess.delay;
+    }
+    if (partial.drc) {
+      if (partial.drc.enabled !== undefined) dsp.drc.enable = partial.drc.enabled;
+      if (partial.drc.gain !== undefined) dsp.drc.gain = partial.drc.gain;
+    }
+    if (partial.avc) {
+      const avc = audio.avc;
+      const algo = avc.algorithm_avc || avc.algorithm;
+      if (partial.avc.enabled !== undefined) avc.enable_avc = partial.avc.enabled;
+      if (partial.avc.digitalEnabled !== undefined) avc.enable_davc = partial.avc.digitalEnabled;
+      if (algo) {
+        if (partial.avc.threshold !== undefined) algo.threshold = partial.avc.threshold;
+        if (partial.avc.upperThreshold !== undefined) algo.upper_threshold = partial.avc.upperThreshold;
+        if (partial.avc.attackRate !== undefined) algo.attack_rate = partial.avc.attackRate;
+        if (partial.avc.decayRate !== undefined) algo.decay_rate = partial.avc.decayRate;
+        if (partial.avc.hysteresis !== undefined) algo.hysteresis = partial.avc.hysteresis;
+        if (partial.avc.farEndLockoutTime !== undefined) algo.far_end_lockout_time = partial.avc.farEndLockoutTime;
+      }
+    }
+    if (partial.mode !== undefined) audio.mode = partial.mode;
+
+    // 3. POST full JSON
+    const body = new URLSearchParams({ audio: JSON.stringify(raw) }).toString();
+    await this._fetch(
+      '/goform/zForm_auto_config',
+      'POST',
+      undefined,
+      body,
+      'application/x-www-form-urlencoded',
+    );
+  }
+
+  /** Get raw audio config JSON from the device (for backup/debug) */
+  async getAudioSettingsRaw(): Promise<any> {
+    // The audio config page embeds JSON in an AngularJS scope.
+    // We fetch the page and extract the JSON from the script block.
+    const html = await this._html('/goform/zForm_audio_configuration');
+
+    // Strategy 1: Look for ng-init or inline JSON assignment
+    // The page typically has: $scope.audio = {...} or data in a form field
+    let jsonStr = '';
+
+    // Try to extract from a script block: audio = {...}
+    const scriptMatch = html.match(/audio\s*=\s*(\{[\s\S]*?\});\s*(?:\n|<\/script>)/)
+      || html.match(/ng-init=['"]\s*init\(([\s\S]*?)\)['"]/);
+
+    if (scriptMatch) {
+      jsonStr = scriptMatch[1];
+    } else {
+      // Strategy 2: POST to get the JSON directly (some FW versions)
+      const res = await this._fetch('/goform/zForm_auto_config', 'GET');
+      const text = await res.text();
+      // The response may be JSON directly
+      try {
+        const parsed = JSON.parse(text);
+        if (parsed.audio) return parsed;
+      } catch { /* not JSON */ }
+
+      // Strategy 3: Look for hidden input or textarea with JSON
+      const inputMatch = html.match(/value='(\{&quot;audio&quot;[^']*)'/);
+      if (inputMatch) {
+        jsonStr = inputMatch[1]
+          .replace(/&quot;/g, '"')
+          .replace(/&amp;/g, '&');
+      }
+    }
+
+    if (!jsonStr) {
+      throw new Error('Could not extract audio config JSON from device. Firmware may not support this endpoint.');
+    }
+
+    return JSON.parse(jsonStr);
+  }
+
+  /** Parse the raw goform JSON into our typed AudioSettings */
+  private _parseAudioJson(raw: any): AudioSettings {
+    const audio = raw.audio;
+    const outputs = audio.io.output_devices.output_device;
+    const speaker = outputs.find((d: any) => d.kid === 'internal_speaker') || outputs[1];
+    const lineOut = outputs.find((d: any) => d.kid === 'line_out') || outputs[0];
+    const mic = audio.io.input_devices.input_device[0];
+    const dsp = audio.lines.line[0].dsp;
+    const avc = audio.avc;
+    const algo = avc.algorithm_avc || avc.algorithm || {};
+
+    return {
+      speaker: {
+        kid: speaker.kid,
+        gain: speaker.gain,
+        overrideGain: speaker.override_gain,
+        signalSource: speaker.signal_source,
+        outputType: speaker.output_type,
+      },
+      lineOut: {
+        kid: lineOut.kid,
+        gain: lineOut.gain,
+        overrideGain: lineOut.override_gain,
+        signalSource: lineOut.signal_source,
+        outputType: lineOut.output_type,
+      },
+      mic: {
+        kid: mic.kid,
+        gain: mic.gain,
+        inputType: mic.input_type,
+      },
+      aec: {
+        enabled: dsp.aec.enable,
+        mode: dsp.aec.aec_mode,
+      },
+      anc: {
+        enabled: dsp.anc.enable,
+        mode: dsp.anc.anc_mode,
+      },
+      fess: {
+        enabled: dsp.fess.enable,
+        threshold: dsp.fess.gain,
+        delay: dsp.fess.delay,
+      },
+      drc: {
+        enabled: dsp.drc.enable,
+        gain: dsp.drc.gain,
+      },
+      avc: {
+        enabled: avc.enable_avc,
+        digitalEnabled: avc.enable_davc,
+        threshold: algo.threshold ?? 55,
+        upperThreshold: algo.upper_threshold ?? 100,
+        attackRate: algo.attack_rate ?? 10,
+        decayRate: algo.decay_rate ?? 10,
+        hysteresis: algo.hysteresis ?? 3,
+        farEndLockoutTime: algo.far_end_lockout_time ?? 1,
+      },
+      mode: audio.mode,
+    };
   }
 
   // ── Tar.gz helpers (Node built-in zlib, no deps) ──────────────────────

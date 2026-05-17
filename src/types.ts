@@ -122,3 +122,106 @@ export interface ProvisionConfig {
   /** Enable auto-answer mode (for AI agent). Default: true */
   autoAnswer?: boolean;
 }
+
+// ── Audio Settings ──────────────────────────────────────────────────────────
+
+/** Speaker / Line Out output device */
+export interface AudioOutputDevice {
+  /** Device identifier: "internal_speaker" or "line_out" */
+  kid: string;
+  /** Playback gain in dB. Speaker: -10..+13, Line Out: -20..+20 */
+  gain: number;
+  /** Override gain for priority calls in dB. Speaker: -10..+23, Line Out: -20..+21 */
+  overrideGain: number;
+  /** Signal source (default: "main_audio_line") */
+  signalSource: string;
+  /** Output type (e.g. "standard_loudspeaker", "line_out_professional") */
+  outputType: string;
+}
+
+/** Microphone input device */
+export interface AudioInputDevice {
+  /** Device identifier: "internal_mic" */
+  kid: string;
+  /** Mic gain in dB. Range: -10..+10 */
+  gain: number;
+  /** Input type (e.g. "digital_mic") */
+  inputType: string;
+}
+
+/** AEC — Acoustic Echo Cancellation */
+export interface AECSettings {
+  /** Enable echo cancellation */
+  enabled: boolean;
+  /** Suppression level */
+  mode: 'moderate' | 'aggressive';
+}
+
+/** ANC — Active Noise Cancellation */
+export interface ANCSettings {
+  /** Enable noise cancellation */
+  enabled: boolean;
+  /** Suppression level */
+  mode: 'moderate' | 'aggressive';
+}
+
+/** FESS — Far-End Signal Squelch */
+export interface FESSSettings {
+  /** Enable squelch on weak signals */
+  enabled: boolean;
+  /** Threshold in dBFS (-92..0). Signals below this are silenced. */
+  threshold: number;
+  /** Activation delay in ms (0..10000) */
+  delay: number;
+}
+
+/** DRC — Dynamic Range Compression (Loudspeaker) */
+export interface DRCSettings {
+  /** Enable compression */
+  enabled: boolean;
+  /** Added gain in dBA (0..20) */
+  gain: number;
+}
+
+/** AVC — Automatic Volume Control */
+export interface AVCSettings {
+  /** Enable automatic volume adjustment based on ambient noise */
+  enabled: boolean;
+  /** Enable digital AVC variant */
+  digitalEnabled: boolean;
+  /** Ambient noise level (dB) to start adjusting */
+  threshold: number;
+  /** Maximum noise level (dB) — stops adjusting above this */
+  upperThreshold: number;
+  /** How fast volume increases (1..100) */
+  attackRate: number;
+  /** How fast volume decreases (1..100) */
+  decayRate: number;
+  /** dB margin to prevent volume bouncing */
+  hysteresis: number;
+  /** Seconds to ignore noise when speaker is active */
+  farEndLockoutTime: number;
+}
+
+/** Complete audio configuration for the Zenitel intercom */
+export interface AudioSettings {
+  /** Internal speaker output */
+  speaker: AudioOutputDevice;
+  /** Line out (auxiliary connector) */
+  lineOut: AudioOutputDevice;
+  /** Internal microphone */
+  mic: AudioInputDevice;
+  /** Acoustic Echo Cancellation */
+  aec: AECSettings;
+  /** Active Noise Cancellation */
+  anc: ANCSettings;
+  /** Far-End Signal Squelch */
+  fess: FESSSettings;
+  /** Dynamic Range Compression */
+  drc: DRCSettings;
+  /** Automatic Volume Control */
+  avc: AVCSettings;
+  /** Audio mode: "Voice" or "Music" */
+  mode: string;
+}
+

@@ -10,4 +10,12 @@ export type {
   CallStatus,
   SIPConfig,
   ProvisionConfig,
+  AudioSettings,
+  AudioOutputDevice,
+  AudioInputDevice,
+  AECSettings,
+  ANCSettings,
+  FESSSettings,
+  DRCSettings,
+  AVCSettings,
 } from './types.js';
