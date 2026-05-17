@@ -443,6 +443,64 @@ await z.provisionDevice({
 | `<enable_wc_r>` | 1 |
 | `<auto_answer_mode>` | 1 |
 
+#### Audio Settings
+
+Read and write the full audio configuration — speaker/mic gain, echo cancellation, noise suppression, compression, and automatic volume.
+
+> **Important:** The Zenitel config endpoint requires the complete JSON payload. `setAudioSettings()` handles this automatically: it reads the current config, merges your changes, and writes the full object back.
+
+```typescript
+// Read current audio settings
+const audio = await z.getAudioSettings();
+// {
+//   speaker: { kid: 'internal_speaker', gain: 0, overrideGain: 13, ... },
+//   mic:     { kid: 'internal_mic', gain: 0, ... },
+//   aec:     { enabled: true, mode: 'moderate' },
+//   anc:     { enabled: true, mode: 'moderate' },
+//   drc:     { enabled: false, gain: 0 },
+//   avc:     { enabled: false, ... },
+//   fess:    { enabled: false, threshold: -60, delay: 0 },
+//   mode:    'Voice'
+// }
+
+// Adjust speaker volume (+3 dB)
+await z.setAudioSettings({ speaker: { gain: 3 } });
+
+// Boost mic sensitivity for better voice recognition
+await z.setAudioSettings({ mic: { gain: 3 } });
+
+// Enable dynamic range compression
+await z.setAudioSettings({ drc: { enabled: true, gain: 8 } });
+
+// Disable noise cancellation
+await z.setAudioSettings({ anc: { enabled: false } });
+
+// Multiple changes at once
+await z.setAudioSettings({
+  speaker: { gain: 2 },
+  mic: { gain: 3 },
+  aec: { enabled: true, mode: 'aggressive' },
+});
+
+// Backup raw config JSON (for restore)
+const raw = await z.getAudioSettingsRaw();
+fs.writeFileSync('audio-backup.json', JSON.stringify(raw, null, 2));
+```
+
+**Audio Settings Reference:**
+
+| Setting | Property | Range | Description |
+|---------|----------|-------|-------------|
+| Speaker Volume | `speaker.gain` | -10 to +13 dB | Agent voice playback level |
+| Speaker Override | `speaker.overrideGain` | -10 to +23 dB | Volume during priority calls |
+| Line Out | `lineOut.gain` | -20 to +20 dB | External speaker output |
+| Mic Sensitivity | `mic.gain` | -10 to +10 dB | Microphone input level |
+| Echo Cancel | `aec.enabled` / `aec.mode` | bool / `moderate` · `aggressive` | Removes speaker audio from mic |
+| Noise Suppress | `anc.enabled` / `anc.mode` | bool / `moderate` · `aggressive` | Filters ambient noise |
+| Compression | `drc.enabled` / `drc.gain` | bool / 0–20 dBA | Normalizes loud/quiet speech |
+| Auto Volume | `avc.enabled` | bool | Adjusts speaker to ambient noise |
+| Squelch | `fess.enabled` / `fess.threshold` | bool / -92–0 dBFS | Silences weak signals |
+
 #### Reboot
 
 ```typescript
@@ -519,6 +577,8 @@ All communication uses the Zenitel web UI's goform API:
 | `/goform/zForm_config_backup` | POST | Config restore (multipart upload) |
 | `/ipst_config.tar.gz` | GET | Config backup download |
 | `/goform/zForm_system_prefs` | POST | Reboot device |
+| `/goform/zForm_audio_configuration` | GET | Audio config page (JSON embedded) |
+| `/goform/zForm_auto_config` | POST | Write audio/DSP configuration |
 | `/mjpg/video.mjpg` | GET | Live MJPG video stream (port 80) |
 
 Authentication: **HTTP Basic Auth** on all endpoints.
