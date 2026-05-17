@@ -28,6 +28,7 @@ This library is intended for **system integrators and IT administrators** managi
   - [Call Button (DAK)](#call-button-dak-configuration)
   - [Provisioning](#full-device-provisioning)
   - [Video](#video)
+  - [Factory Reset](#factory-reset)
   - [Reboot](#device-reboot)
 - [API](#api)
   - [Connectivity](#connectivity)
@@ -42,6 +43,7 @@ This library is intended for **system integrators and IT administrators** managi
   - [Provisioning](#full-device-provisioning-1)
   - [Audio Settings](#audio-settings)
   - [Reboot](#reboot)
+  - [Factory Reset](#factory-reset-1)
 - [Device Discovery](#scannetwork)
 - [Supported Hardware](#supported-hardware)
 - [HTTP API Reference](#http-api-reference)
@@ -225,6 +227,19 @@ tciv provision -h 192.168.1.143 \
 tciv reboot -h 192.168.1.143
 ```
 
+### Factory Reset
+
+```bash
+# Full reset (IP → 169.254.1.100)
+tciv factory-reset -h 192.168.1.143
+
+# Reset but keep current IP settings (recommended)
+tciv factory-reset -h 192.168.1.143 --keep-ip
+
+# Reset with DHCP enabled
+tciv factory-reset -h 192.168.1.143 --dhcp
+```
+
 ### CLI Options
 
 | Flag | Short | Description | Default |
@@ -244,6 +259,8 @@ tciv reboot -h 192.168.1.143
 | `--no-reboot` | | Skip reboot after DAK set | |
 | `--sip-user` | | SIP auth username (provision) | |
 | `--sip-pass` | | SIP auth password (provision) | |
+| `--keep-ip` | | Factory reset: keep IP settings | |
+| `--dhcp` | | Factory reset: enable DHCP | |
 
 ---
 
@@ -398,6 +415,25 @@ fs.writeFileSync('audio-backup.json', JSON.stringify(raw, null, 2));
 await z.reboot(); // ~30 seconds offline
 ```
 
+#### Factory Reset
+
+```typescript
+// Full reset (static IP 169.254.1.100)
+await z.factoryReset('full');
+
+// Reset but keep current IP (recommended)
+await z.factoryReset('keep-ip');
+
+// Reset with DHCP
+await z.factoryReset('dhcp');
+```
+
+| Mode | Behavior |
+|------|----------|
+| `full` | All defaults, IP → 169.254.1.100 |
+| `dhcp` | All defaults, DHCP enabled |
+| `keep-ip` | All defaults, current IP preserved |
+
 ---
 
 ### `scanNetwork()`
@@ -440,6 +476,7 @@ All endpoints require valid administrator credentials via HTTP Basic Auth.
 | `/goform/zForm_config_backup` | POST | Config restore (upload) |
 | `/ipst_config.tar.gz` | GET | Config backup download |
 | `/goform/zForm_system_prefs` | POST | Reboot device |
+| `/goform/zForm_send_cmd` | POST | Factory reset (full/DHCP/keep-ip) |
 | `/mjpg/video.mjpg` | GET | Live MJPG stream |
 
 ## License
