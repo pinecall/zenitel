@@ -9,6 +9,10 @@ Zero runtime dependencies · Native `fetch` (Node 18+) · Tested on **TCIV-2+** 
 
 > **Trademark Notice:** This project is **not affiliated with, endorsed by, or sponsored by Zenitel AS.** "Zenitel" and "TCIV" are trademarks of their respective owners. This library is an independent tool for authorized administrators to manage their own intercom systems.
 
+## Intended Use
+
+This library is intended for **system integrators and IT administrators** managing TCIV-series intercoms they own or are authorized to administer. All operations require valid device credentials.
+
 ## Table of Contents
 
 - [Install](#install)
@@ -40,7 +44,7 @@ Zero runtime dependencies · Native `fetch` (Node 18+) · Tested on **TCIV-2+** 
   - [Reboot](#reboot)
 - [Device Discovery](#scannetwork)
 - [Supported Hardware](#supported-hardware)
-- [Goform Endpoint Map](#goform-endpoint-map)
+- [HTTP API Reference](#http-api-reference)
 
 ---
 
@@ -227,7 +231,7 @@ tciv reboot -h 192.168.1.143
 |------|-------|-------------|---------|
 | `--host` | `-h` | Device IP address | required |
 | `--user` | `-u` | Web UI username | `admin` |
-| `--pass` | `-p` | Web UI password | `alphaadmin` |
+| `--pass` | `-p` | Web UI password | `alphaadmin` (change on first login) |
 | `--id` | | Relay ID (`relay1`, `gpio1`–`gpio6`) | `relay1` |
 | `--timer` | | Relay timer (seconds) | `3` |
 | `--timeout` | | Scan timeout (ms) | `5000` |
@@ -420,7 +424,9 @@ const devices = await scanNetwork({ timeout: 5000 });
 | TCIV-3+ | ✅ | ✅ | ✅ | ✅ | Expected |
 | TCIS-2 | — | ✅ | ✅ | ✅ | Expected |
 
-## Goform Endpoint Map
+## HTTP API Reference
+
+All endpoints require valid administrator credentials via HTTP Basic Auth.
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
@@ -435,8 +441,6 @@ const devices = await scanNetwork({ timeout: 5000 });
 | `/ipst_config.tar.gz` | GET | Config backup download |
 | `/goform/zForm_system_prefs` | POST | Reboot device |
 | `/mjpg/video.mjpg` | GET | Live MJPG stream |
-
-Auth: **HTTP Basic** on all endpoints.
 
 ## License
 

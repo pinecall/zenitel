@@ -1,6 +1,6 @@
 {
   "name": "tciv-client",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "HTTP client for TCIV-series intercom systems (TCIV-2+, TCIV-3). Control relays, SIP configuration, DAK provisioning, webcall, audio settings, and camera feeds.",
   "type": "module",
   "main": "./dist/index.js",
