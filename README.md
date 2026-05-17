@@ -1,4 +1,6 @@
-# @pinecall/zenitel-client
+# zenitel-client
+
+[![npm](https://img.shields.io/npm/v/zenitel-client?color=818cf8&label=npm)](https://www.npmjs.com/package/zenitel-client)
 
 > TypeScript client for Zenitel intercom systems — HTTP scraper, network scanner, and CLI.
 
@@ -9,7 +11,7 @@ Tested and validated against a real **TCIV-2+** (Turbine Compact - Video Plus), 
 ## Install
 
 ```bash
-npm install @pinecall/zenitel-client
+npm install zenitel-client
 ```
 
 ---
@@ -233,7 +235,7 @@ zenitel reboot -h 192.168.1.143
 The main class for interacting with a single Zenitel intercom via its web UI (HTTP).
 
 ```typescript
-import { ZenitelClient } from '@pinecall/zenitel-client';
+import { ZenitelClient } from 'zenitel-client';
 
 const z = new ZenitelClient({
   host: '192.168.1.143',
@@ -410,7 +412,7 @@ await z.configureCallButton('portia-ae3c', 'my.sip.twilio.com', false);
 One-shot setup for a factory-reset Zenitel. Configures SIP credentials, call button, webcall, and auto-answer in a single backup→upload→reboot cycle.
 
 ```typescript
-import type { ProvisionConfig } from '@pinecall/zenitel-client';
+import type { ProvisionConfig } from 'zenitel-client';
 
 await z.provisionDevice({
   sipDomain: 'testing-mo16m3gw.sip.twilio.com',
@@ -455,7 +457,7 @@ await z.reboot();
 Discovers Zenitel intercoms on the local network using multiple strategies.
 
 ```typescript
-import { scanNetwork } from '@pinecall/zenitel-client';
+import { scanNetwork } from 'zenitel-client';
 
 const devices = await scanNetwork();
 // [
