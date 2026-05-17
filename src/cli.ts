@@ -233,6 +233,41 @@ async function main() {
       console.log(`⚠️  Factory reset (${labels[mode]}) — all settings will be lost!`);
       await client.factoryReset(mode);
       console.log('✅ Factory reset sent. Device will reboot with default settings.');
+      if (!hasFlag('no-wait')) {
+        console.log('⏳ Waiting for device to come back online...');
+        const ok = await client.waitForReboot(90000);
+        console.log(ok ? '✅ Device is back online!' : '⚠️  Timeout — device may still be rebooting.');
+      }
+      break;
+    }
+
+    case 'mode': {
+      const client = getClient();
+      const subCmd = args[1]; // get | set
+      if (subCmd === 'set') {
+        const target = args[2] as 'sip' | 'dip' | 'exc' | 'srv';
+        if (!target || !['sip', 'dip', 'exc', 'srv'].includes(target)) {
+          console.error('Usage: tciv mode set <sip|dip|exc|srv>');
+          console.log('  sip  = SIP mode');
+          console.log('  dip  = ICX-AlphaCom');
+          console.log('  exc  = Edge');
+          console.log('  srv  = Edge Controller');
+          process.exit(1);
+        }
+        console.log(`🔄 Setting mode to ${target}...`);
+        await client.setMode(target);
+        console.log('📤 Applying changes (device will reboot)...');
+        await client.applyChanges();
+        if (!hasFlag('no-wait')) {
+          console.log('⏳ Waiting for device to come back online...');
+          const ok = await client.waitForReboot(90000);
+          console.log(ok ? '✅ Device is back online!' : '⚠️  Timeout — device may still be rebooting.');
+        }
+      } else {
+        const mode = await client.getMode();
+        const labels: Record<string, string> = { sip: 'SIP', dip: 'ICX-AlphaCom', exc: 'Edge', srv: 'Edge Controller', pulse: 'Edge' };
+        console.log(`📡 Current mode: ${labels[mode] || mode} (${mode})`);
+      }
       break;
     }
 

@@ -29,6 +29,7 @@ This library is intended for **system integrators and IT administrators** managi
   - [Provisioning](#full-device-provisioning)
   - [Video](#video)
   - [Factory Reset](#factory-reset)
+  - [Mode (SIP/Edge)](#mode-sipedge)
   - [Reboot](#device-reboot)
 - [API](#api)
   - [Connectivity](#connectivity)
@@ -240,6 +241,27 @@ tciv factory-reset -h 192.168.1.143 --keep-ip
 tciv factory-reset -h 192.168.1.143 --dhcp
 ```
 
+### Mode (SIP/Edge)
+
+```bash
+# Read current mode
+tciv mode -h 192.168.1.143
+# 📡 Current mode: SIP (sip)
+
+# Switch to SIP mode (reboots device, waits ~40s)
+tciv mode set sip -h 192.168.1.143
+
+# Switch to Edge mode
+tciv mode set exc -h 192.168.1.143
+```
+
+| Mode value | Description |
+|------------|-------------|
+| `sip` | SIP mode (required for Portia) |
+| `dip` | ICX-AlphaCom |
+| `exc` | Edge |
+| `srv` | Edge Controller |
+
 ### CLI Options
 
 | Flag | Short | Description | Default |
@@ -433,6 +455,27 @@ await z.factoryReset('dhcp');
 | `full` | All defaults, IP → 169.254.1.100 |
 | `dhcp` | All defaults, DHCP enabled |
 | `keep-ip` | All defaults, current IP preserved |
+
+#### Mode
+
+```typescript
+// Read current mode
+const mode = await z.getMode();
+// 'sip' | 'dip' | 'pulse' (Edge) | 'srv'
+
+// Switch to SIP mode
+await z.setMode('sip');
+await z.applyChanges(); // triggers reboot
+await z.waitForReboot(); // polls until online (~40s)
+```
+
+#### Wait for Reboot
+
+```typescript
+// Poll until device comes back online (default 60s timeout)
+const online = await z.waitForReboot(60000, 3000);
+// true = device is back, false = timeout
+```
 
 ---
 
