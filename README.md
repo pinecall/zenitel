@@ -38,7 +38,7 @@ Zero runtime dependencies · Native `fetch` (Node 18+) · Tested on **TCIV-2+** 
   - [Provisioning](#full-device-provisioning-1)
   - [Audio Settings](#audio-settings)
   - [Reboot](#reboot)
-- [Network Scanner](#scannetwork)
+- [Device Discovery](#scannetwork)
 - [Supported Hardware](#supported-hardware)
 - [Goform Endpoint Map](#goform-endpoint-map)
 
@@ -53,9 +53,9 @@ npm install tciv-client
 ## Quick Start
 
 ```typescript
-import { ZenitelClient } from 'tciv-client';
+import { TcivClient } from 'tciv-client';
 
-const z = new ZenitelClient({ host: '192.168.1.143' });
+const z = new TcivClient({ host: '192.168.1.143' });
 
 // Check if device is reachable
 await z.isReachable();           // true
@@ -79,7 +79,7 @@ await z.setAudioSettings({ speaker: { gain: 3 } });
 
 ## CLI
 
-The `zenitel` CLI is included for hardware testing and debugging.
+The `tciv` CLI is included for hardware testing and debugging.
 
 ```bash
 npx tciv <command> [options]
@@ -88,9 +88,9 @@ npx tciv <command> [options]
 ### Device Discovery
 
 ```bash
-zenitel scan
+tciv scan
 
-# 🔍 Scanning network for Zenitel devices...
+# 🔍 Scanning for TCIV devices...
 #
 #   🟢 192.168.1.143
 #      MAC: 00:13:cb:28:35:ca
@@ -106,7 +106,7 @@ zenitel scan
 ### Device Information
 
 ```bash
-zenitel info -h 192.168.1.143
+tciv info -h 192.168.1.143
 
 # 📋 Device info:
 #   Model:          TCIV-2+
@@ -124,19 +124,19 @@ zenitel info -h 192.168.1.143
 ### Call Status & Relays
 
 ```bash
-zenitel status -h 192.168.1.143        # Full status
-zenitel relay -h 192.168.1.143          # Open door (relay1, 3s)
-zenitel relay -h 192.168.1.143 --id gpio2 --timer 5  # GPIO output
-zenitel relay -h 192.168.1.143 --off    # Deactivate
-zenitel call 122 -h 192.168.1.143       # Place SIP call
-zenitel stop -h 192.168.1.143           # Hang up
+tciv status -h 192.168.1.143        # Full status
+tciv relay -h 192.168.1.143          # Open door (relay1, 3s)
+tciv relay -h 192.168.1.143 --id gpio2 --timer 5  # GPIO output
+tciv relay -h 192.168.1.143 --off    # Deactivate
+tciv call 122 -h 192.168.1.143       # Place SIP call
+tciv stop -h 192.168.1.143           # Hang up
 ```
 
 ### SIP Configuration
 
 ```bash
-zenitel sip get -h 192.168.1.143        # Read SIP config
-zenitel sip set -h 192.168.1.143 \
+tciv sip get -h 192.168.1.143        # Read SIP config
+tciv sip set -h 192.168.1.143 \
   --domain my-trunk.sip.twilio.com \
   --number station01
 ```
@@ -144,16 +144,16 @@ zenitel sip set -h 192.168.1.143 \
 ### Webcall API Management
 
 ```bash
-zenitel webcall -h 192.168.1.143           # Check status
-zenitel webcall enable -h 192.168.1.143    # Enable HTTP API
-zenitel webcall disable -h 192.168.1.143   # Disable
+tciv webcall -h 192.168.1.143           # Check status
+tciv webcall enable -h 192.168.1.143    # Enable HTTP API
+tciv webcall disable -h 192.168.1.143   # Disable
 ```
 
 ### Audio Settings
 
 ```bash
 # Read current audio config
-zenitel audio -h 192.168.1.143
+tciv audio -h 192.168.1.143
 
 # 🎵 Audio settings for 192.168.1.143:
 #
@@ -167,26 +167,26 @@ zenitel audio -h 192.168.1.143
 #   Mode:        Voice
 
 # Adjust speaker and mic
-zenitel audio set -h 192.168.1.143 --speaker 3 --mic 3
+tciv audio set -h 192.168.1.143 --speaker 3 --mic 3
 
 # Toggle DSP features
-zenitel audio set -h 192.168.1.143 --aec-on --drc-on --anc-off
+tciv audio set -h 192.168.1.143 --aec-on --drc-on --anc-off
 
 # Backup raw audio config as JSON
-zenitel audio backup -h 192.168.1.143 -o audio-backup.json
+tciv audio backup -h 192.168.1.143 -o audio-backup.json
 ```
 
 ### Config Backup & Restore
 
 ```bash
-zenitel backup -h 192.168.1.143 -o backup.tar.gz
-zenitel restore backup.tar.gz -h 192.168.1.143
+tciv backup -h 192.168.1.143 -o backup.tar.gz
+tciv restore backup.tar.gz -h 192.168.1.143
 ```
 
 ### Video
 
 ```bash
-zenitel video -h 192.168.1.143
+tciv video -h 192.168.1.143
 # 📷 Video URLs:
 #   MJPG:  http://192.168.1.143/mjpg/video.mjpg
 #   RTSP:  rtsp://192.168.1.143:554/1/RTSP
@@ -195,18 +195,18 @@ zenitel video -h 192.168.1.143
 ### Call Button (DAK) Configuration
 
 ```bash
-zenitel dak get -h 192.168.1.143
-zenitel dak set --number portia-ae3c -h 192.168.1.143
+tciv dak get -h 192.168.1.143
+tciv dak set --number portia-ae3c -h 192.168.1.143
 ```
 
 > Downloads config → modifies XML → re-uploads → reboots. Zero external dependencies.
 
 ### Full Device Provisioning
 
-One command to configure a factory-reset Zenitel:
+One command to configure a factory-reset intercom:
 
 ```bash
-zenitel provision -h 192.168.1.143 \
+tciv provision -h 192.168.1.143 \
   --domain testing-mo16m3gw.sip.twilio.com \
   --sip-user zenitel01 \
   --sip-pass 'your-sip-password' \
@@ -218,7 +218,7 @@ zenitel provision -h 192.168.1.143 \
 ### Device Reboot
 
 ```bash
-zenitel reboot -h 192.168.1.143
+tciv reboot -h 192.168.1.143
 ```
 
 ### CLI Options
@@ -245,12 +245,12 @@ zenitel reboot -h 192.168.1.143
 
 ## API
 
-### `ZenitelClient`
+### `TcivClient`
 
 ```typescript
-import { ZenitelClient } from 'tciv-client';
+import { TcivClient } from 'tciv-client';
 
-const z = new ZenitelClient({
+const z = new TcivClient({
   host: '192.168.1.143',
   user: 'admin',         // default
   password: 'alphaadmin', // default
@@ -358,7 +358,7 @@ await z.provisionDevice({
 
 Read and write the full audio configuration — speaker/mic gain, echo cancellation, noise suppression, compression, and automatic volume control.
 
-> The Zenitel config endpoint requires the **complete** JSON payload. `setAudioSettings()` handles this automatically — it reads, merges your changes, and writes back.
+> The config endpoint requires the **complete** JSON payload. `setAudioSettings()` handles this automatically — it reads, merges your changes, and writes back.
 
 ```typescript
 const audio = await z.getAudioSettings();
@@ -408,7 +408,7 @@ const devices = await scanNetwork({ timeout: 5000 });
 | Strategy | Method | Speed |
 |----------|--------|-------|
 | `arp-oui` | ARP table + MAC prefix `00:13:CB` | Fast |
-| `http-probe` | Probe every IP for `zenitel.js` | Thorough |
+| `http-probe` | Probe every IP for `tciv-fingerprint` | Thorough |
 
 ---
 

@@ -1,18 +1,18 @@
 #!/usr/bin/env node
 /**
- * zenitel — CLI for testing Zenitel intercom interaction
+ * tciv — CLI for TCIV-series intercom administration
  *
  * Usage:
- *   zenitel scan                             Discover Zenitel devices on the network
- *   zenitel info -h 192.168.1.143            Get device info
- *   zenitel relay -h 192.168.1.143           Activate relay1 for 3 seconds
- *   zenitel relay -h ... --id gpio1 --timer 5
- *   zenitel call 122 -h 192.168.1.143        Place a call
- *   zenitel stop -h 192.168.1.143            Stop current call
- *   zenitel status -h 192.168.1.143          Get relay + call status
+ *   tciv scan                             Discover TCIV devices on the network
+ *   tciv info -h 192.168.1.143            Get device info
+ *   tciv relay -h 192.168.1.143           Activate relay1 for 3 seconds
+ *   tciv relay -h ... --id gpio1 --timer 5
+ *   tciv call 122 -h 192.168.1.143        Place a call
+ *   tciv stop -h 192.168.1.143            Stop current call
+ *   tciv status -h 192.168.1.143          Get relay + call status
  */
 
-import { ZenitelClient } from './client.js';
+import { TcivClient } from './client.js';
 import { scanNetwork } from './scanner.js';
 
 const args = process.argv.slice(2);
@@ -31,13 +31,13 @@ function hasFlag(name: string): boolean {
   return args.includes(`--${name}`);
 }
 
-function getClient(): ZenitelClient {
+function getClient(): TcivClient {
   const host = flag('host', 'h');
   if (!host) {
     console.error('Error: --host (-h) is required');
     process.exit(1);
   }
-  return new ZenitelClient({
+  return new TcivClient({
     host,
     user: flag('user', 'u') ?? 'admin',
     password: flag('pass', 'p') ?? 'alphaadmin',
@@ -47,12 +47,12 @@ function getClient(): ZenitelClient {
 async function main() {
   switch (command) {
     case 'scan': {
-      console.log('🔍 Scanning network for Zenitel devices...\n');
+      console.log('🔍 Scanning network for TCIV devices...\n');
       const devices = await scanNetwork({
         timeout: Number(flag('timeout') ?? 5000),
       });
       if (devices.length === 0) {
-        console.log('No Zenitel devices found.');
+        console.log('No TCIV devices found.');
         break;
       }
       for (const dev of devices) {
@@ -113,7 +113,7 @@ async function main() {
       const client = getClient();
       const number = args[1];
       if (!number) {
-        console.error('Usage: zenitel call <number> -h <host>');
+        console.error('Usage: tciv call <number> -h <host>');
         process.exit(1);
       }
       console.log(`📞 Calling ${number}...`);
@@ -187,7 +187,7 @@ async function main() {
       } else {
         const info = await client.getDeviceInfo();
         console.log(`Webcall: ${info.webcallEnabled ? '✅ Enabled' : '❌ Disabled'}`);
-        console.log('\nUsage: zenitel webcall enable|disable -h <host>');
+        console.log('\nUsage: tciv webcall enable|disable -h <host>');
       }
       break;
     }
@@ -208,7 +208,7 @@ async function main() {
       const { readFileSync } = await import('node:fs');
       const inFile = args[1];
       if (!inFile) {
-        console.error('Usage: zenitel restore <file.tar.gz> -h <host>');
+        console.error('Usage: tciv restore <file.tar.gz> -h <host>');
         process.exit(1);
       }
       console.log(`📤 Uploading config from ${inFile}...`);
@@ -241,7 +241,7 @@ async function main() {
       if (subCmd === 'set') {
         const number = flag('number') || args[2];
         if (!number) {
-          console.error('Usage: zenitel dak set --number <sip-number> -h <host>');
+          console.error('Usage: tciv dak set --number <sip-number> -h <host>');
           process.exit(1);
         }
         const domain = flag('domain');
@@ -272,7 +272,7 @@ async function main() {
       const agentNumber = flag('number') || flag('agent');
 
       if (!sipDomain || !sipAuthUser || !sipAuthPassword || !agentNumber) {
-        console.error(`Usage: zenitel provision -h <host> \\
+        console.error(`Usage: tciv provision -h <host> \\
   --domain <sip-domain> \\
   --sip-user <auth-username> \\
   --sip-pass <auth-password> \\
@@ -325,7 +325,7 @@ Optional:
         if (hasFlag('avc-off')) partial.avc = { enabled: false };
 
         if (Object.keys(partial).length === 0) {
-          console.error(`Usage: zenitel audio set -h <host> [options]
+          console.error(`Usage: tciv audio set -h <host> [options]
 
   --speaker <dB>    Speaker gain (-10 to +13)
   --mic <dB>        Mic gain (-10 to +10)
@@ -374,10 +374,10 @@ Optional:
     }
 
     default:
-      console.log(`zenitel — Zenitel intercom CLI
+      console.log(`tciv — TCIV intercom CLI
 
 Commands:
-  scan                       Discover devices on the network
+  scan                       Discover devices on the local network
   info     -h <host>         Device information
   relay    -h <host>         Activate relay (--id relay1 --timer 3)
   relay    -h <host> --off   Deactivate relay
@@ -397,7 +397,7 @@ Commands:
   video    -h <host>         Show video stream URLs
 
 Options:
-  -h, --host       IP address of the Zenitel
+  -h, --host       IP address of the intercom
   -u, --user       Username (default: admin)
   -p, --pass       Password (default: alphaadmin)
       --id         Relay ID (relay1, gpio1-gpio6)

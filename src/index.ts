@@ -1,6 +1,8 @@
-export { ZenitelClient } from './client.js';
+export { TcivClient } from './client.js';
+export { TcivClient as ZenitelClient } from './client.js';
 export { scanNetwork } from './scanner.js';
 export type {
+  ZenitelClientOptions as TcivClientOptions,
   ZenitelClientOptions,
   ZenitelDevice,
   ScanOptions,

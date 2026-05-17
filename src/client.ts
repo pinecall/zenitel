@@ -1,7 +1,7 @@
 /**
- * ZenitelClient — HTTP scraper for Zenitel intercom web UI
+ * TcivClient — HTTP client for TCIV-series intercom systems
  *
- * All methods use the goform endpoints documented in the Zenitel wiki
+ * All methods use the goform endpoints documented in the manufacturer wiki
  * and confirmed against a real TCIV-2+ (FW 9.2.3.0) at 192.168.1.143.
  *
  * Auth: HTTP Basic Auth (admin/alphaadmin by default).
@@ -19,7 +19,7 @@ import type {
   AudioSettings,
 } from './types.js';
 
-export class ZenitelClient {
+export class TcivClient {
   private readonly baseUrl: string;
   private readonly authHeader: string;
   private readonly timeout: number;

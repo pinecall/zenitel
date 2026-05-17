@@ -1,5 +1,5 @@
 /**
- * Network scanner — Discover Zenitel intercoms on the local network
+ * Device discovery — Discover TCIV intercoms on the local network for authorized administrators
  *
  * Strategy A: ARP table + OUI filter (MAC prefix 00:13:cb = Zenitel)
  * Strategy B: HTTP probe with fingerprinting (zenitel.js in HTML)
@@ -11,7 +11,7 @@ import { execFile } from 'node:child_process';
 import { platform } from 'node:os';
 import { networkInterfaces } from 'node:os';
 import type { ZenitelDevice, ScanOptions } from './types.js';
-import { ZenitelClient } from './client.js';
+import { TcivClient } from './client.js';
 
 const ZENITEL_OUI = '00:13:cb';
 
@@ -60,7 +60,7 @@ async function arpOuiScan(): Promise<ZenitelDevice[]> {
   // For each candidate, try to get device info
   const results = await Promise.all(
     zenitels.map(async (entry) => {
-      const client = new ZenitelClient({ host: entry.ip, timeout: 3000 });
+      const client = new TcivClient({ host: entry.ip, timeout: 3000 });
       try {
         const info = await client.getDeviceInfo();
         return {
