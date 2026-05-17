@@ -309,7 +309,8 @@ export class TcivClient {
   async getDAK(buttonIndex = 0): Promise<string> {
     const res = await this._fetch('/goform/zForm_speeddial_configuration_basic_auth');
     const html = await res.text();
-    const match = html.match(new RegExp(`name='dak_value${buttonIndex}'[^>]*value='([^']*)'`));
+    // Attribute order varies: value may come before or after name
+    const match = html.match(new RegExp(`dak_value${buttonIndex}[^>]*value='([^']*)'`));
     return match?.[1] || '';
   }
 
