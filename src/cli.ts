@@ -307,6 +307,72 @@ Optional:
       break;
     }
 
+    case 'audio': {
+      const client = getClient();
+      const subCmd = args[1]; // get | set | backup
+
+      if (subCmd === 'set') {
+        const partial: Record<string, any> = {};
+        if (flag('speaker') !== undefined) partial.speaker = { gain: Number(flag('speaker')) };
+        if (flag('mic') !== undefined) partial.mic = { gain: Number(flag('mic')) };
+        if (hasFlag('aec-on')) partial.aec = { enabled: true };
+        if (hasFlag('aec-off')) partial.aec = { enabled: false };
+        if (hasFlag('anc-on')) partial.anc = { enabled: true };
+        if (hasFlag('anc-off')) partial.anc = { enabled: false };
+        if (hasFlag('drc-on')) partial.drc = { enabled: true, gain: Number(flag('drc-gain') ?? 8) };
+        if (hasFlag('drc-off')) partial.drc = { enabled: false };
+        if (hasFlag('avc-on')) partial.avc = { enabled: true };
+        if (hasFlag('avc-off')) partial.avc = { enabled: false };
+
+        if (Object.keys(partial).length === 0) {
+          console.error(`Usage: zenitel audio set -h <host> [options]
+
+  --speaker <dB>    Speaker gain (-10 to +13)
+  --mic <dB>        Mic gain (-10 to +10)
+  --aec-on/off      Echo cancellation
+  --anc-on/off      Noise suppression
+  --drc-on/off      Dynamic compression (--drc-gain <0-20>)
+  --avc-on/off      Auto volume`);
+          process.exit(1);
+        }
+
+        console.log('🔧 Updating audio settings...');
+        await client.setAudioSettings(partial);
+        console.log('✅ Audio settings applied.');
+
+        // Show updated values
+        const after = await client.getAudioSettings();
+        if (partial.speaker) console.log(`  Speaker: ${after.speaker.gain} dB`);
+        if (partial.mic) console.log(`  Mic:     ${after.mic.gain} dB`);
+        if (partial.aec) console.log(`  AEC:     ${after.aec.enabled ? 'ON' : 'OFF'}`);
+        if (partial.anc) console.log(`  ANC:     ${after.anc.enabled ? 'ON' : 'OFF'}`);
+        if (partial.drc) console.log(`  DRC:     ${after.drc.enabled ? 'ON' : 'OFF'} (${after.drc.gain} dBA)`);
+        if (partial.avc) console.log(`  AVC:     ${after.avc.enabled ? 'ON' : 'OFF'}`);
+
+      } else if (subCmd === 'backup') {
+        const { writeFileSync } = await import('node:fs');
+        const outFile = flag('out', 'o') || 'audio-backup.json';
+        console.log('💾 Backing up audio config...');
+        const raw = await client.getAudioSettingsRaw();
+        writeFileSync(outFile, JSON.stringify(raw, null, 2));
+        console.log(`✅ Saved to ${outFile}`);
+
+      } else {
+        // Default: get / show
+        console.log(`🎵 Audio settings for ${flag('host', 'h')}:\n`);
+        const a = await client.getAudioSettings();
+        console.log(`  Speaker:     ${a.speaker.gain > 0 ? '+' : ''}${a.speaker.gain} dB  (range: -10 to +13)`);
+        console.log(`  Mic:         ${a.mic.gain > 0 ? '+' : ''}${a.mic.gain} dB  (range: -10 to +10)`);
+        console.log(`  AEC:         ${a.aec.enabled ? '✅ ON' : '❌ OFF'}  (${a.aec.mode})`);
+        console.log(`  ANC:         ${a.anc.enabled ? '✅ ON' : '❌ OFF'}  (${a.anc.mode})`);
+        console.log(`  DRC:         ${a.drc.enabled ? '✅ ON' : '❌ OFF'}  (${a.drc.gain} dBA)`);
+        console.log(`  AVC:         ${a.avc.enabled ? '✅ ON' : '❌ OFF'}`);
+        console.log(`  FESS:        ${a.fess.enabled ? '✅ ON' : '❌ OFF'}  (threshold: ${a.fess.threshold} dBFS)`);
+        console.log(`  Mode:        ${a.mode}`);
+      }
+      break;
+    }
+
     default:
       console.log(`zenitel — Zenitel intercom CLI
 
@@ -322,6 +388,9 @@ Commands:
   sip set  -h <host>         Write SIP config (--domain --number --proxy ...)
   webcall enable -h <host>   Enable webcall + relay HTTP API
   webcall disable -h <host>  Disable webcall + relay HTTP API
+  audio    -h <host>         Read audio settings
+  audio set -h <host>        Write audio (--speaker --mic --aec-on/off ...)
+  audio backup -h <host>     Backup audio config to JSON
   backup [file] -h <host>    Download config as tar.gz
   restore <file> -h <host>   Upload config tar.gz
   reboot   -h <host>         Reboot the device
@@ -339,6 +408,8 @@ Options:
       --number     SIP directory number
       --proxy      Outbound proxy
       --transport  SIP transport (udp/tcp/tls)
+      --speaker    Speaker gain in dB (-10 to +13)
+      --mic        Mic gain in dB (-10 to +10)
       --name       Display name`);
   }
 }

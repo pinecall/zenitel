@@ -539,44 +539,34 @@ export class ZenitelClient {
 
   /** Get raw audio config JSON from the device (for backup/debug) */
   async getAudioSettingsRaw(): Promise<any> {
-    // The audio config page embeds JSON in an AngularJS scope.
-    // We fetch the page and extract the JSON from the script block.
-    const html = await this._html('/goform/zForm_audio_configuration');
+    // The AngularJS audio controller fetches data via:
+    //   POST /goform/zForm_auto_config
+    //   body: get=get&path=/state/config/audio
+    // Response: { out: { get: { data: { audio: {...} } } } }
+    const body = new URLSearchParams({
+      get: 'get',
+      path: '/state/config/audio',
+    }).toString();
 
-    // Strategy 1: Look for ng-init or inline JSON assignment
-    // The page typically has: $scope.audio = {...} or data in a form field
-    let jsonStr = '';
+    const res = await this._fetch(
+      '/goform/zForm_auto_config',
+      'POST',
+      undefined,
+      body,
+      'application/x-www-form-urlencoded',
+    );
 
-    // Try to extract from a script block: audio = {...}
-    const scriptMatch = html.match(/audio\s*=\s*(\{[\s\S]*?\});\s*(?:\n|<\/script>)/)
-      || html.match(/ng-init=['"]\s*init\(([\s\S]*?)\)['"]/);
+    // Zenitel appends a trailing form-feed (\f) after JSON — can't use res.json()
+    const text = (await res.text()).trim();
+    const json = JSON.parse(text);
 
-    if (scriptMatch) {
-      jsonStr = scriptMatch[1];
-    } else {
-      // Strategy 2: POST to get the JSON directly (some FW versions)
-      const res = await this._fetch('/goform/zForm_auto_config', 'GET');
-      const text = await res.text();
-      // The response may be JSON directly
-      try {
-        const parsed = JSON.parse(text);
-        if (parsed.audio) return parsed;
-      } catch { /* not JSON */ }
-
-      // Strategy 3: Look for hidden input or textarea with JSON
-      const inputMatch = html.match(/value='(\{&quot;audio&quot;[^']*)'/);
-      if (inputMatch) {
-        jsonStr = inputMatch[1]
-          .replace(/&quot;/g, '"')
-          .replace(/&amp;/g, '&');
-      }
+    // Response shape: { out: { get: { data: { audio: {...} } } } }
+    const audio = json?.out?.get?.data?.audio;
+    if (!audio) {
+      throw new Error('Unexpected response from audio config endpoint. Check firmware compatibility.');
     }
 
-    if (!jsonStr) {
-      throw new Error('Could not extract audio config JSON from device. Firmware may not support this endpoint.');
-    }
-
-    return JSON.parse(jsonStr);
+    return { audio };
   }
 
   /** Parse the raw goform JSON into our typed AudioSettings */
