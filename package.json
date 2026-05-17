@@ -1,6 +1,6 @@
 {
   "name": "zenitel",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "HTTP client + network scanner for Zenitel intercom systems (TCIV-2+, TCIV-3). Control relays, SIP configuration, DAK provisioning, webcall, and camera feeds.",
   "type": "module",
   "main": "./dist/index.js",
@@ -38,11 +38,11 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/pinecall/zenitel-client"
+    "url": "https://github.com/pinecall/zenitel"
   },
-  "homepage": "https://github.com/pinecall/zenitel-client#readme",
+  "homepage": "https://github.com/pinecall/zenitel#readme",
   "bugs": {
-    "url": "https://github.com/pinecall/zenitel-client/issues"
+    "url": "https://github.com/pinecall/zenitel/issues"
   },
   "engines": {
     "node": ">=18"
