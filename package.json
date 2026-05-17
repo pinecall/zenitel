@@ -1,6 +1,6 @@
 {
   "name": "zenitel",
-  "version": "0.1.2",
+  "version": "0.0.1",
   "description": "HTTP client + network scanner for Zenitel intercom systems (TCIV-2+, TCIV-3). Control relays, SIP configuration, DAK provisioning, webcall, and camera feeds.",
   "type": "module",
   "main": "./dist/index.js",
